@@ -88,6 +88,53 @@
         .search-box input, input[type="time"], #date-range-input { 
             width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 10px; box-sizing: border-box; font-size: 1rem;
         }
+
+/* Estilo para los contenedores de hora 2x2 */
+    .time-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-top: 10px;
+    }
+
+    .time-box {
+        background: #f2f2f7;
+        padding: 15px;
+        border-radius: 18px;
+        border: 1px solid var(--border);
+        text-align: center;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .time-box:hover {
+        border-color: var(--primary);
+        background: #fff;
+    }
+
+    .time-box label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: var(--text-sub);
+        margin-bottom: 5px;
+        display: block;
+        letter-spacing: 1px;
+    }
+
+    .time-val {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--text-main);
+        display: block;
+    }
+
+    /* Ocultar los inputs reales pero mantenerlos para la lógica */
+    .hidden-input {
+        position: absolute;
+        visibility: hidden;
+        height: 0;
+    }
+        
     </style>
 </head>
 <body>
@@ -138,11 +185,24 @@
     </div>
 
     <div class="step">
-        <label>Horario</label>
-        <small>Inicio:</small><input type="time" id="time-start">
-        <small>Fin:</small><input type="time" id="time-end">
+    <label>Horario del Turno</label>
+    <div class="time-grid">
+        <div class="time-box" onclick="document.getElementById('time-start')._flatpickr.open()">
+            <label>Inicio</label>
+            <span class="time-val" id="display-start">09:00</span>
+            <input type="text" id="time-start" class="hidden-input">
+        </div>
+        <div class="time-box" onclick="document.getElementById('time-end')._flatpickr.open()">
+            <label>Fin</label>
+            <span class="time-val" id="display-end">11:00</span>
+            <input type="text" id="time-end" class="hidden-input">
+        </div>
     </div>
-
+    <p style="font-size: 0.8rem; color: var(--text-sub); text-align: center; margin-top: 15px;">
+        Toca cada recuadro para ajustar la hora.
+    </p>
+</div>
+    
     <div class="nav-btns">
         <button class="btn-prev" id="prevBtn" onclick="move(-1)" style="display:none">Atrás</button>
         <button class="btn-next" id="nextBtn" onclick="move(1)">Siguiente</button>
@@ -154,6 +214,32 @@
 <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
 
 <script>
+
+// Añade esto a tu función window.onload o donde inicializas los scripts
+    function initTimePickers() {
+        const config = {
+            enableTime: true,
+            noCalendar: true,
+            dateFormat: "H:i",
+            time_24hr: true,
+            disableMobile: "true", // Fuerza el estilo bonito en móviles también
+            onClose: function(selectedDates, dateStr, instance) {
+                const displayId = instance.element.id === 'time-start' ? 'display-start' : 'display-end';
+                document.getElementById(displayId).innerText = dateStr;
+            }
+        };
+
+        flatpickr("#time-start", { ...config, defaultDate: "09:00" });
+        flatpickr("#time-end", { ...config, defaultDate: "11:00" });
+    }
+
+    // No olvides llamar a initTimePickers() en el window.onload
+    const originalOnload = window.onload;
+    window.onload = () => {
+        if (originalOnload) originalOnload();
+        initTimePickers();
+    };
+    
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbykFawTvnXDqzBgEjhBT1Kq0chGh1AyfsMw7J7QW_EMKWC5c8Ebnm3kj2P78DxfJ-t0Jg/exec';
     
     let gente = ["Germán Cabezas", "Natalia de Palomino", "Manuel Tobar", "Claudia de Tobar", "Fernando Aldunate", "Nataly de Aldunate", "Ana María de Muñoz", "Nicolás Muñoz", "Juanita Gajardo", "Rosita Minda", "Nelly Ticse", "Constanza Donoso", "María Luísa de Reyes", "Marta de García", "Douglas García", "Ingrid Arnold", "Antonio Silva", "Mariolly de Silva", "Daniela de Brito", "Zoltan Jeu", "Paula de Jeu", "Claudia Carrión", "Thaís Contreras", "Carlos Moya", "Tomás Vergara", "Gisella de Vergara", "Fedora Tironi", "Francisca de López"];
@@ -245,3 +331,4 @@
 </script>
 </body>
 </html>
+
