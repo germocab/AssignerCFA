@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asignador de Turnos Pro</title>
+    <style>
+        :root {
+            --primary: #0071bc;
+            --primary-hover: #005a96;
+            --bg: #f8f9fa;
+            --text-main: #1d1d1f;
+            --text-sub: #86868b;
+            --white: #ffffff;
+            --border: #d2d2d7;
+        }
+
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            background: var(--bg); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+        }
+
+        .container { 
+            width: 95%; 
+            max-width: 550px; 
+            background: var(--white); 
+            padding: 30px; 
+            border-radius: 24px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.05); 
+        }
+
+        .progress-container { background: #e5e5e7; height: 6px; border-radius: 10px; margin-bottom: 25px; }
+        .progress-bar { background: var(--primary); height: 100%; width: 20%; border-radius: 10px; transition: 0.4s ease; }
+
+        h2 { text-align: center; color: var(--text-main); font-size: 1.4rem; margin-bottom: 20px; }
+        .step { display: none; animation: slideIn 0.3s ease-out; }
+        .step.active { display: block; }
+
+        @keyframes slideIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+
+        label { display: block; text-align: center; font-size: 1.1rem; font-weight: 600; margin-bottom: 15px; color: var(--text-main); }
+
+        .search-box { position: relative; margin-bottom: 15px; }
+        .search-box input {
+            width: 100%;
+            padding: 10px 15px 10px 35px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            font-size: 1rem;
+            outline: none;
+            box-sizing: border-box;
+        }
+        .search-box::before { content: "🔍"; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); opacity: 0.5; }
+
+        /* Cuadrícula de personas 2x2 */
+        .people-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 10px; 
+            max-height: 320px; 
+            overflow-y: auto; 
+            padding: 5px;
+        }
+
+        .person-card {
+            display: flex;
+            align-items: center;
+            background: var(--white);
+            border: 2px solid transparent;
+            border-radius: 50px;
+            padding: 5px 12px 5px 5px;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .person-card:hover { border-color: var(--primary); }
+        .person-card.selected { background: var(--primary); border-color: var(--primary); }
+        .person-card.selected .p-name, .person-card.selected .p-role { color: var(--white); }
+
+        .avatar { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; margin-right: 10px; background: #eee; }
+        .p-info { display: flex; flex-direction: column; overflow: hidden; text-align: left; }
+        .p-name { font-weight: 700; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .p-role { font-size: 0.7rem; color: var(--text-sub); }
+
+        .add-btn-container { grid-column: span 2; padding: 10px; }
+        .add-btn {
+            width: 100%;
+            padding: 12px;
+            border: 2px dashed var(--primary);
+            background: #f0f7ff;
+            color: var(--primary);
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .add-btn:hover { background: var(--primary); color: white; border-style: solid; }
+
+        .nav-btns { display: flex; gap: 15px; margin-top: 25px; }
+        .nav-btns button { flex: 1; padding: 15px; border-radius: 12px; border: none; font-weight: 600; cursor: pointer; }
+        .btn-prev { background: #e5e5e7; color: var(--text-main); }
+        .btn-next { background: var(--primary); color: white; }
+
+        .opt-btn { width: 100%; padding: 14px; margin-bottom: 8px; border-radius: 12px; border: 1px solid var(--border); background: white; cursor: pointer; text-align: center; }
+        .opt-btn.selected { background: var(--primary); color: white; border-color: var(--primary); }
+
+        input[type="date"], input[type="time"] { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 10px; box-sizing: border-box; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="progress-container"><div class="progress-bar" id="progress"></div></div>
+    
+    <div class="step active">
+        <label>Selecciona el Día</label>
+        <div id="days-container">
+            <button class="opt-btn" onclick="selectItem('day', 'Lunes', this)">Lunes</button>
+            <button class="opt-btn" onclick="selectItem('day', 'Martes', this)">Martes</button>
+            <button class="opt-btn" onclick="selectItem('day', 'Miércoles', this)">Miércoles</button>
+            <button class="opt-btn" onclick="selectItem('day', 'Jueves', this)">Jueves</button>
+            <button class="opt-btn" onclick="selectItem('day', 'Viernes', this)">Viernes</button>
+            <button class="opt-btn" onclick="selectItem('day', 'Sábado', this)">Sábado</button>
+            <button class="opt-btn" onclick="selectItem('day', 'Domingo', this)">Domingo</button>
+        </div>
+    </div>
+
+    <div class="step">
+        <label>Participantes (Máx. 3)</label>
+        <div class="search-box">
+            <input type="text" id="p-search" placeholder="Buscar hermano..." onkeyup="filterPeople()">
+        </div>
+        <div id="p-counter" style="text-align: center; font-size: 0.85rem; color: var(--primary); font-weight: bold; margin-bottom: 10px;">Seleccionados: 0/3</div>
+        <div class="people-grid" id="people-list">
+            </div>
+    </div>
+
+    <div class="step">
+        <label>Punto de Predicación</label>
+        <div style="max-height: 300px; overflow-y: auto; padding-right: 5px;">
+            <button class="opt-btn" onclick="selectItem('station', 'Supermercado Líder', this)">Supermercado Líder</button>
+            <button class="opt-btn" onclick="selectItem('station', 'Clínica Cordillera', this)">Clínica Cordillera</button>
+            <button class="opt-btn" onclick="selectItem('station', 'Santa Zita', this)">Santa Zita</button>
+            <button class="opt-btn" onclick="selectItem('station', 'Visviri', this)">Visviri / Santa Isabel</button>
+            <button class="opt-btn" onclick="selectItem('station', 'Feria Bilbao', this)">Feria Bilbao</button>
+            <button class="opt-btn" onclick="selectItem('station', 'Parque Intercomunal', this)">Parque Intercomunal</button>
+            <button class="opt-btn" onclick="selectItem('station', 'Patricia', this)">Patricia</button>
+        </div>
+    </div>
+
+    <div class="step">
+        <label>Periodo (Fechas)</label>
+        <small>Desde:</small><input type="date" id="date-start">
+        <small>Hasta:</small><input type="date" id="date-end">
+    </div>
+
+    <div class="step">
+        <label>Horario</label>
+        <small>Hora Inicio:</small><input type="time" id="time-start">
+        <small>Hora Fin:</small><input type="time" id="time-end">
+    </div>
+
+    <div class="nav-btns">
+        <button class="btn-prev" id="prevBtn" onclick="move(-1)" style="display:none">Atrás</button>
+        <button class="btn-next" id="nextBtn" onclick="move(1)">Siguiente</button>
+    </div>
+    <div id="status" style="text-align: center; margin-top: 15px; font-weight: bold; font-size: 0.9rem;"></div>
+</div>
+
+<script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbykFawTvnXDqzBgEjhBT1Kq0chGh1AyfsMw7J7QW_EMKWC5c8Ebnm3kj2P78DxfJ-t0Jg/exec';
+    
+    // Lista base
+    let gente = [
+        "Germán Cabezas", "Natalia de Palomino", "Manuel Tobar", "Claudia de Tobar",
+        "Fernando Aldunate", "Nataly de Aldunate", "Ana María de Muñoz", "Nicolás Muñoz",
+        "Juanita Gajardo", "Rosita Minda", "Nelly Ticse", "Constanza Donoso",
+        "María Luísa de Reyes", "Marta de García", "Douglas García", "Ingrid Arnold",
+        "Antonio Silva", "Mariolly de Silva", "Daniela de Brito", "Zoltan Jeu",
+        "Paula de Jeu", "Claudia Carrión", "Thaís Contreras", "Carlos Moya",
+        "Tomás Vergara", "Gisella de Vergara", "Fedora Tironi", "Francisca de López"
+    ];
+
+    let currentStep = 0;
+    let selections = { day: null, people: [], station: null };
+
+    // Cargar nombres adicionales guardados en el navegador
+    function loadExtraPeople() {
+        const extra = JSON.parse(localStorage.getItem('hermanosNuevos')) || [];
+        gente = [...new Set([...gente, ...extra])];
+    }
+
+    function renderPeople() {
+        loadExtraPeople();
+        const container = document.getElementById('people-list');
+        container.innerHTML = '';
+        
+        gente.forEach(nombre => {
+            const card = document.createElement('button');
+            card.className = 'person-card' + (selections.people.includes(nombre) ? ' selected' : '');
+            card.innerHTML = `
+                <img src="img/${nombre}.jpg" class="avatar" onerror="this.src='https://ui-avatars.com/api/?name=${nombre}&background=random&color=fff'">
+                <div class="p-info">
+                    <span class="p-name">${nombre}</span>
+                    <span class="p-role">Precursor/a</span>
+                </div>
+            `;
+            card.onclick = () => togglePerson(nombre, card);
+            container.appendChild(card);
+        });
+
+        // Agregar botón de "Nuevo Hermano" al final
+        const addContainer = document.createElement('div');
+        addContainer.className = 'add-btn-container';
+        addContainer.innerHTML = `<button class="add-btn" onclick="addNewPerson()">+ Agregar Hermano/a</button>`;
+        container.appendChild(addContainer);
+    }
+
+    function addNewPerson() {
+        const nombre = prompt("Nombre completo del nuevo hermano/a:");
+        if (nombre && nombre.trim().length > 2) {
+            const extra = JSON.parse(localStorage.getItem('hermanosNuevos')) || [];
+            if (!gente.includes(nombre)) {
+                extra.push(nombre);
+                localStorage.setItem('hermanosNuevos', JSON.stringify(extra));
+                renderPeople();
+            } else {
+                alert("Este nombre ya existe en la lista.");
+            }
+        }
+    }
+
+    function filterPeople() {
+        const term = document.getElementById('p-search').value.toLowerCase();
+        document.querySelectorAll('.person-card').forEach(card => {
+            const name = card.querySelector('.p-name').innerText.toLowerCase();
+            card.style.display = name.includes(term) ? 'flex' : 'none';
+        });
+    }
+
+    function togglePerson(name, el) {
+        const idx = selections.people.indexOf(name);
+        if (idx > -1) {
+            selections.people.splice(idx, 1);
+            el.classList.remove('selected');
+        } else if (selections.people.length < 3) {
+            selections.people.push(name);
+            el.classList.add('selected');
+        }
+        document.getElementById('p-counter').innerText = `Seleccionados: ${selections.people.length}/3`;
+    }
+
+    function selectItem(cat, val, el) {
+        selections[cat] = val;
+        el.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
+        el.classList.add('selected');
+    }
+
+    function move(n) {
+        const steps = document.querySelectorAll('.step');
+        if (n === 1 && currentStep === steps.length - 1) { sendData(); return; }
+        steps[currentStep].classList.remove('active');
+        currentStep += n;
+        steps[currentStep].classList.add('active');
+        document.getElementById('prevBtn').style.display = currentStep === 0 ? 'none' : 'block';
+        document.getElementById('nextBtn').innerText = currentStep === steps.length - 1 ? 'Registrar' : 'Siguiente';
+        document.getElementById('progress').style.width = ((currentStep + 1) / steps.length * 100) + '%';
+    }
+
+    function sendData() {
+        const status = document.getElementById('status');
+        const dStart = document.getElementById('date-start').value;
+        const tStart = document.getElementById('time-start').value;
+        
+        if (!selections.day || !selections.station || !dStart || !tStart) {
+            alert("Faltan datos obligatorios."); return;
+        }
+
+        status.innerText = "Registrando turno...";
+        document.getElementById('nextBtn').disabled = true;
+
+        let tipo = selections.people.length === 0 ? "TD" : (parseInt(tStart) < 12 ? "M" : "T");
+
+        const payload = {
+            dia: selections.day,
+            tipo: tipo,
+            participantes: selections.people.join(", ") || "DISPONIBLE",
+            horario: `${tStart} - ${document.getElementById('time-end').value}`,
+            punto: selections.station,
+            periodo: `${dStart} al ${document.getElementById('date-end').value}`
+        };
+
+        fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+        }).then(() => {
+            status.style.color = "green";
+            status.innerText = "¡Éxito! Turno registrado.";
+            setTimeout(() => location.reload(), 2000);
+        });
+    }
+
+    window.onload = renderPeople;
+</script>
+</body>
+</html>
