@@ -224,29 +224,39 @@
 <script>
 
 // Añade esto a tu función window.onload o donde inicializas los scripts
-    function initTimePickers() {
-        const config = {
-            enableTime: true,
-            noCalendar: true,
-            dateFormat: "H:i",
-            time_24hr: true,
-            disableMobile: "true", // Fuerza el estilo bonito en móviles también
-            onClose: function(selectedDates, dateStr, instance) {
-                const displayId = instance.element.id === 'time-start' ? 'display-start' : 'display-end';
-                document.getElementById(displayId).innerText = dateStr;
-            }
-        };
-
-        flatpickr("#time-start", { ...config, defaultDate: "09:00" });
-        flatpickr("#time-end", { ...config, defaultDate: "11:00" });
-    }
-
-    // No olvides llamar a initTimePickers() en el window.onload
-    const originalOnload = window.onload;
-    window.onload = () => {
-        if (originalOnload) originalOnload();
-        initTimePickers();
+ // 1. Inicialización unificada de Flatpickr para horas
+function initTimePickers() {
+    const config = {
+        enableTime: true,
+        noCalendar: true,
+        dateFormat: "H:i",
+        time_24hr: true,
+        disableMobile: "true", // Esto asegura que use el estilo de Flatpickr y no el nativo del móvil
+        onClose: function(selectedDates, dateStr, instance) {
+            const displayId = instance.element.id === 'time-start' ? 'display-start' : 'display-end';
+            document.getElementById(displayId).innerText = dateStr;
+        }
     };
+
+    // Inicializar y asignar valores por defecto a los inputs ocultos
+    flatpickr("#time-start", { ...config, defaultDate: "09:00" });
+    flatpickr("#time-end", { ...config, defaultDate: "11:00" });
+    
+    // Asegurar que los inputs tengan valor inicial para el envío de datos
+    document.getElementById('time-start').value = "09:00";
+    document.getElementById('time-end').value = "11:00";
+}
+
+// ... (aquí mantén tus variables SCRIPT_URL, gente, etc.)
+
+// 2. FUNCIÓN ONLOAD ÚNICA
+window.onload = () => {
+    renderPeople();      // Carga la lista de personas
+    initPicker();        // Carga el calendario de rango
+    initTimePickers();   // Carga los selectores de hora
+};
+
+// ... (aquí el resto de tus funciones como move, togglePerson, etc.)
     
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbykFawTvnXDqzBgEjhBT1Kq0chGh1AyfsMw7J7QW_EMKWC5c8Ebnm3kj2P78DxfJ-t0Jg/exec';
     
@@ -339,5 +349,6 @@
 </script>
 </body>
 </html>
+
 
 
